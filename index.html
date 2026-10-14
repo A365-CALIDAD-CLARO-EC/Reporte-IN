@@ -178,10 +178,12 @@ th{background:var(--cx-soft);color:var(--cx-ink2);font-size:11.5px;font-weight:6
 .kpi{padding:12px 14px;border-left:1px solid var(--line)}
 .kpi:first-child{border-left:0}
 .kpi .v{font-weight:600;font-size:30px}
+.kpis{grid-template-columns:repeat(5,1fr)}
+.kpi .km{font-size:12px;color:var(--muted);margin-top:4px}
 @media (prefers-reduced-motion:reduce){.stk-s .fill{transition:none}}
 @media (max-width:1100px){.pecs{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:820px){.final .num{font-size:68px}.stk-s .t{display:none}}
-@media (max-width:700px){.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}}
+@media (max-width:700px){.kpis{grid-template-columns:repeat(2,1fr)}.kpi:nth-child(odd){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}}
 @media (max-width:560px){.pecs{grid-template-columns:1fr 1fr}.stk{height:60px}.stk-s .v{font-size:16px}}
 .final .num,.kpi .v,.seg .pct{font-family:var(--cx-display);font-stretch:normal}
 .final .num{font-weight:700}
@@ -448,12 +450,14 @@ function render(){
   document.getElementById('stkNote').textContent=`Cumplimiento por bloque sin contar los NO APLICA. Cada bloque ocupa el ancho de su peso (${BL.map(B=>BW[B.k]).join(' · ')} puntos); lo coloreado es lo logrado.`;
   document.getElementById('pecs').innerHTML=BL.map(B=>{const v=A.b[B.k];
     return `<div class="pec" style="--c:${BCOL[B.k]}"><div class="n">${B.n}</div><div class="p">${v===null?'–':v.toFixed(1)+'%'}</div><div class="d">${v===null?'Sin datos':(BW[B.k]*v/100).toFixed(1)+' de '+BW[B.k]+' pts en el PEC final'}</div><div class="mini"><i style="width:${v??0}%"></i></div></div>`;}).join('');
+  const encu=itemStats(rs).find(i=>i.k==='encuesta')||{fail:null}; // metas: infografía «KPIs del Contact Center»
   document.getElementById('kpis').innerHTML=[
     [A.copc===null?'–':A.copc.toFixed(1)+'%','Nota COPC (crítico = 0)'],
     [A.crit===null?'–':A.crit.toFixed(1)+'%',`Evaluaciones con error crítico (${A.critN})`],
     [A.metaOk===null?'–':A.metaOk.toFixed(1)+'%',`Evaluaciones sobre la meta (COPC)`],
-    [A.fcr===null?'–':A.fcr.toFixed(1)+'%','Resolución en la llamada (FCR)']
-  ].map(([v,l])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+    [A.fcr===null?'–':A.fcr.toFixed(1)+'%','Resolución en la llamada (FCR)',A.fcr,85],
+    [encu.fail===null?'–':(100-encu.fail).toFixed(1)+'%','Derivación a encuesta',encu.fail===null?null:100-encu.fail,70]
+  ].map(([v,l,x,meta])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div>${meta?`<div class="km">Meta ≥ ${meta}%${x==null?'':` <span class="pill ${x>=meta?'ok':'bad'}">${x>=meta?'En meta':'Bajo meta'}</span>`}</div>`:''}</div>`).join('');
 
   // daily chart
   const byDay=[...groupBy(rs,'fecha')].sort((a,b)=>a[0]<b[0]?-1:1);
