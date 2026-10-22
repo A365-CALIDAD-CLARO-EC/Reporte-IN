@@ -108,9 +108,10 @@ footer h3{color:var(--ink);font-size:16px;margin:0 0 6px}
 footer ul{margin:0;padding-left:18px;max-width:90ch}
 #ocDlg{width:min(860px,calc(100vw - 32px));max-height:min(80vh,720px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
 #ocDlg::backdrop{background:rgba(10,15,22,.55)}
-#detDlg{width:min(1240px,calc(100vw - 32px));max-height:min(90vh,980px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
-#detDlg::backdrop{background:rgba(10,15,22,.55)}
+#aseDlg,#detDlg{width:min(1240px,calc(100vw - 32px));max-height:min(90vh,980px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
+#aseDlg::backdrop,#detDlg::backdrop{background:rgba(10,15,22,.55)}
 #detDlg .tw{max-height:calc(90vh - 190px);overflow:auto}
+#aseDlg .tw{max-height:calc(90vh - 200px);overflow:auto}
 .dlg-h{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px}
 .dlg-h>div{flex:1;min-width:0}
 .dlg-h h3{margin:0;font-size:18px}
@@ -234,7 +235,7 @@ footer h3{margin-bottom:8px!important}
   <div class="f"><label for="fMeta">Meta PEC %</label><input autocomplete="off" id="fMeta" type="number" min="50" max="100" step="1" value="90"></div>
   <button class="reset" id="reset">Limpiar filtros</button>
   <a class="golink" href="https://a365-calidad.github.io/Reporte-CLARO-NPS/" title="Abrir el dashboard de encuestas post-llamada (NPS)">Encuestas NPS ▸</a>
-  <div class="jump"><a href="#evol">Evolución</a><a href="#sup">Supervisores</a><a href="#ase">Asesores</a><a href="#mot">Motivos</a><a href="#items">Ítems</a><a href="#oc">Ofrecimiento</a><a href="#" id="openDet">Detalle</a></div>
+  <div class="jump"><a href="#evol">Evolución</a><a href="#sup">Supervisores</a><a href="#" id="openAse">Asesores</a><a href="#mot">Motivos</a><a href="#items">Ítems</a><a href="#oc">Ofrecimiento</a><a href="#" id="openDet">Detalle</a></div>
 </div></nav>
 
 <main class="wrap">
@@ -274,16 +275,21 @@ footer h3{margin-bottom:8px!important}
   </div>
 </section>
 
-<section id="ase">
-  <h2>Asesores</h2>
-  <p class="lede">Ranking por PEC final. Haz clic en un encabezado para ordenar o en una fila para filtrar por ese asesor.</p>
-  <div class="panel"><div class="tw"><table id="tAse"></table></div></div>
-  <div class="panel" style="margin-top:18px">
-    <h3 style="margin:0 0 4px;font-size:16px">Mapa de quiebre por asesor e ítem</h3>
+<dialog id="aseDlg" aria-labelledby="aseDlgT">
+  <div class="dlg-h">
+    <div><p class="dlg-k">Asesores</p><h3 id="aseDlgT">Asesores</h3></div>
+    <button class="dlg-x" id="aseX" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <div class="seg-toggle" role="tablist" aria-label="Tabla de asesores"><button type="button" role="tab" id="aseTabR" aria-pressed="true" aria-selected="true" aria-controls="asePanR">Ranking por PEC final</button><button type="button" role="tab" id="aseTabM" aria-pressed="false" aria-selected="false" aria-controls="asePanM">Mapa de quiebre por ítem</button></div>
+  <div id="asePanR" role="tabpanel" aria-labelledby="aseTabR">
+    <p class="small" style="margin:0 0 10px">Ranking por PEC final. Haz clic en un encabezado para ordenar o en una fila para filtrar todo el reporte por ese asesor.</p>
+    <div class="tw"><table id="tAse"></table></div>
+  </div>
+  <div id="asePanM" role="tabpanel" aria-labelledby="aseTabM" hidden>
     <p class="small" style="margin:0 0 10px">% de incumplimiento sobre las evaluaciones donde el ítem aplica. Vacío = no aplicó.</p>
     <div class="tw"><table class="hm" id="hmAse"></table></div>
   </div>
-</section>
+</dialog>
 
 <section id="mot">
   <h2>Motivos de llamada</h2>
@@ -668,6 +674,12 @@ function ocSup(sup,y){
 document.getElementById('ocBack').onclick=()=>ocOpen(ocMot.motivo,ocMot.x);
 document.getElementById('ocX').onclick=()=>ocDlg.close();
 ocDlg.addEventListener('click',e=>{if(e.target===ocDlg)ocDlg.close();});
+const aseDlg=document.getElementById('aseDlg');
+document.getElementById('openAse').onclick=e=>{e.preventDefault();aseDlg.showModal();};
+document.getElementById('aseX').onclick=()=>aseDlg.close();
+aseDlg.addEventListener('click',e=>{if(e.target===aseDlg)aseDlg.close();});
+// pestañas: Ranking / Mapa de quiebre
+[['aseTabR','asePanR'],['aseTabM','asePanM']].forEach(([t,pn],_,all)=>document.getElementById(t).onclick=()=>all.forEach(([t2,p2])=>{const on=t2===t;document.getElementById(t2).setAttribute('aria-pressed',on);document.getElementById(t2).setAttribute('aria-selected',on);document.getElementById(p2).hidden=!on;}));
 const detDlg=document.getElementById('detDlg');
 document.getElementById('openDet').onclick=e=>{e.preventDefault();detDlg.showModal();};
 document.getElementById('detX').onclick=()=>detDlg.close();
