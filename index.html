@@ -398,8 +398,6 @@ footer h3{margin-bottom:8px!important}
     <div class="in"><p class="small" style="margin:0 0 6px">Haz clic en una fila para ver quiénes incumplen ese ítem.</p><div class="tw"><table id="tPecIt"></table></div></div></details>
   <details class="mas"><summary>Más detalles <span class="sub">· por antigüedad del asesor</span></summary>
     <div class="in"><p class="small" id="pecAntS" style="margin:0 0 6px"></p><div class="tw"><table id="tPecAnt"></table></div></div></details>
-  <details class="mas"><summary>Más detalles <span class="sub">· ejemplos recientes con incumplimientos</span></summary>
-    <div class="in"><div class="tw"><table id="tPecEj"></table></div></div></details>
 </dialog>
 <dialog id="detDlg" aria-labelledby="detDlgT">
   <div class="dlg-h">
@@ -803,7 +801,7 @@ function pecOpen(k){
     ap.forEach(r=>{if(!vale(r,i))return;const W=its.reduce((a,j)=>a+(vale(r,j)?j.w:0),0);
       if(r.it[i.k]===1)si++;else{no++;gap+=i.w*(1-r.it[i.k])/W;ases[r.asesorN]=(ases[r.asesorN]||0)+1;}});
     return {...i,si,no,cump:si+no?si/(si+no)*100:null,gap:ap.length?gap/ap.length*100:0,ases:Object.entries(ases).sort((a,b)=>b[1]-a[1])};});
-  const conFalla=ap.filter(r=>its.some(i=>r.it[i.k]===0)).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const conFalla=ap.filter(r=>its.some(i=>r.it[i.k]===0));
   const falta=A===null?null:100-A, top=st.filter(x=>x.gap>0.05).sort((a,b)=>b.gap-a.gap);
   document.getElementById('pecDlgT').textContent=`${B.n} · ${A===null?'–':A.toFixed(1)+'%'}`;
   document.getElementById('pecDlgS').innerHTML=A===null?'No hay evaluaciones donde aplique este bloque con los filtros actuales.'
@@ -838,23 +836,14 @@ function pecOpen(k){
     st,{sort:5,dir:-1,onRow:d=>pecAse(d)});
   // por antigüedad: ¿los nuevos cumplen menos este PEC?
   const ga={};ap.forEach(r=>{const a=r.ant||'Sin dato';(ga[a]=ga[a]||[]).push(r);});
-  const antR=Object.entries(ga).map(([a,v])=>{const cnt=its.map(i=>[i,v.filter(r=>r.it[i.k]===0).length]).filter(x=>x[1]).sort((x,y)=>y[1]-x[1]);
-    return {a,n:v.length,p:mean(v.map(r=>r.b100[k])),inc:v.filter(r=>its.some(i=>r.it[i.k]===0)).length/v.length*100,ase:new Set(v.map(r=>r.asesorN)).size,top:cnt[0]};})
+  const antR=Object.entries(ga).map(([a,v])=>({a,n:v.length,p:mean(v.map(r=>r.b100[k])),inc:v.filter(r=>its.some(i=>r.it[i.k]===0)).length/v.length*100,ase:new Set(v.map(r=>r.asesorN)).size}))
     .sort((x,y)=>ANT_ORD(x.a)-ANT_ORD(y.a));
   const conDato=antR.filter(x=>x.a!=='Sin dato'&&x.n>=5), lo=conDato.slice().sort((x,y)=>x.p-y.p)[0], hi=conDato.slice().sort((x,y)=>y.p-x.p)[0];
   document.getElementById('pecAntS').innerHTML=lo&&hi&&lo!==hi&&hi.p-lo.p>=1?`Los asesores con <b>${lo.a}</b> de antigüedad llegan a <b>${lo.p.toFixed(1)}%</b> en este PEC, frente a <b>${hi.p.toFixed(1)}%</b> de los de <b>${hi.a}</b> (${(hi.p-lo.p).toFixed(1)} pp de diferencia). Antigüedad a la fecha de monitoreo, según la dotación.`
     :'Antigüedad a la fecha de monitoreo, según la dotación.'+(conDato.length>1?' No hay diferencias relevantes entre grupos.':'');
   const ta=document.getElementById('tPecAnt');ta._sort=undefined;
   table('tPecAnt',[{h:'Antigüedad',v:d=>ANT_ORD(d.a),f:d=>d.a,cls:'l'},{h:'Asesores',v:d=>d.ase},{h:'Evaluaciones',v:d=>d.n},
-    {h:'% del PEC',v:d=>d.p,f:d=>heat(d.p)},{h:'Evaluaciones con<br>incumplimiento',v:d=>d.inc,f:d=>heat(d.inc,true)},
-    {h:'Ítem que más falla',v:d=>d.top?d.top[1]:0,f:d=>d.top?`${escP(d.top[0].n)} (${d.top[1]})`:'<span class="na">–</span>',cls:'l',nosort:true}],antR,{sort:0,dir:1});
-  const e=document.getElementById('tPecEj');e._sort=undefined;
-  table('tPecEj',[
-    {h:'Fecha',v:d=>d.fecha,f:d=>fmtDay(d.fecha),cls:'l'},
-    {h:'Asesor',v:d=>d.asesorN,cls:'l'},
-    {h:'Ítems en NO CUMPLE',v:d=>d.fecha,f:d=>its.filter(i=>d.it[i.k]===0).map(i=>escP(i.n)).join('<br>'),cls:'wrap',nosort:true},
-    {h:'Novedad del analista',v:d=>d.fecha,f:d=>escP(String(d.novedad||'').slice(0,320))+(String(d.novedad||'').length>320?'…':''),cls:'wrap',nosort:true}],
-    conFalla.slice(0,8),{sort:0,dir:-1});
+    {h:'% del PEC',v:d=>d.p,f:d=>heat(d.p)},{h:'Evaluaciones con<br>incumplimiento',v:d=>d.inc,f:d=>heat(d.inc,true)}],antR,{sort:0,dir:1});
 }
 // detalle por asesor de un ítem (clic en la barra o en la fila): solo quienes incumplen, con lectura narrativa
 function pecAse(i){
