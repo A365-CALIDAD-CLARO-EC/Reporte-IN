@@ -813,7 +813,7 @@ function pecOpen(k){
   mk('chPec',{type:'bar',plugins:[etiquetas],data:{labels:stO.map(x=>x.n),datasets:[{label:'Resta (pp)',data:stO.map(x=>+x.gap.toFixed(2)),
       backgroundColor:stO.map(x=>x.gap>0.05?css('--chart2'):css('--line')),borderRadius:3,maxBarThickness:12}]},
     options:{...baseOpts(),indexAxis:'y',layout:{padding:{right:130}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const x=stO[c.dataIndex];return `Resta ${x.gap.toFixed(1)} pp · ${x.no} de ${x.si+x.no} no cumple`;}}}},
-      scales:{x:{beginAtZero:true,title:{display:true,text:'Puntos porcentuales que resta al 100%'}},y:{ticks:{callback:function(v){const l=this.getLabelForValue(v);return l.length>42?l.slice(0,41)+'…':l;}}}},
+      scales:{x:{min:0,max:100,ticks:{stepSize:20},title:{display:true,text:'Puntos porcentuales que resta al 100% (escala 0–100)'}},y:{ticks:{callback:function(v){const l=this.getLabelForValue(v);return l.length>42?l.slice(0,41)+'…':l;}}}},
 }});
   const t=document.getElementById('tPecIt');t._sort=undefined;
   table('tPecIt',[
