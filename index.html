@@ -108,10 +108,13 @@ footer h3{color:var(--ink);font-size:16px;margin:0 0 6px}
 footer ul{margin:0;padding-left:18px;max-width:90ch}
 #ocDlg{width:min(860px,calc(100vw - 32px));max-height:min(80vh,720px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
 #ocDlg::backdrop{background:rgba(10,15,22,.55)}
-#aseDlg,#detDlg,#cuarDlg{width:min(1240px,calc(100vw - 32px));max-height:min(90vh,980px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
-#aseDlg::backdrop,#detDlg::backdrop,#cuarDlg::backdrop{background:rgba(10,15,22,.55)}
+#pecDlg,#aseDlg,#detDlg,#cuarDlg{width:min(1240px,calc(100vw - 32px));max-height:min(90vh,980px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
+#pecDlg::backdrop,#aseDlg::backdrop,#detDlg::backdrop,#cuarDlg::backdrop{background:rgba(10,15,22,.55)}
 #detDlg .tw{max-height:calc(90vh - 190px);overflow:auto}
 #aseDlg .tw,#cuarDlg .tw{max-height:calc(90vh - 200px);overflow:auto}
+#pecDlg .tw{max-height:38vh;overflow:auto}
+.pec[data-k]{cursor:pointer;transition:box-shadow .15s,transform .15s}.pec[data-k]:hover,.pec[data-k]:focus-visible{box-shadow:0 4px 14px rgba(16,24,40,.12);transform:translateY(-1px)}
+.pec .why{margin-top:8px;font-size:12px;color:var(--muted)}.pec[data-k]:hover .why{color:var(--ink)}
 .dlg-h{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px}
 .dlg-h>div{flex:1;min-width:0}
 .dlg-h h3{margin:0;font-size:18px}
@@ -368,6 +371,16 @@ footer h3{margin-bottom:8px!important}
   <div class="tw"><table id="tOcDlg"></table></div>
 </dialog>
 
+<dialog id="pecDlg" aria-labelledby="pecDlgT">
+  <div class="dlg-h">
+    <div><p class="dlg-k">¿Por qué no llega al 100%?</p><h3 id="pecDlgT"></h3></div>
+    <button class="dlg-x" id="pecX" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <p class="small" id="pecDlgS" style="margin:0 0 12px"></p>
+  <div class="tw"><table id="tPecIt"></table></div>
+  <h4 style="margin:16px 0 6px;font-size:14px">Ejemplos recientes con incumplimientos</h4>
+  <div class="tw"><table id="tPecEj"></table></div>
+</dialog>
 <dialog id="detDlg" aria-labelledby="detDlgT">
   <div class="dlg-h">
     <div><p class="dlg-k">Detalle</p><h3 id="detDlgT">Detalle de evaluaciones</h3></div>
@@ -543,7 +556,7 @@ function render(){
   document.getElementById('stkScale').innerHTML=BL.map(B=>`<span style="flex:${BW[B.k]}">${BW[B.k]} pts</span>`).join('');
   document.getElementById('stkNote').textContent=`Cumplimiento por bloque sin contar los NO APLICA. Cada bloque ocupa el ancho de su peso (${BL.map(B=>BW[B.k]).join(' · ')} puntos); lo coloreado es lo logrado.`;
   document.getElementById('pecs').innerHTML=BL.map(B=>{const v=A.b[B.k];
-    return `<div class="pec" style="--c:${BCOL[B.k]}"><div class="n">${B.n}</div><div class="p">${v===null?'–':v.toFixed(1)+'%'}</div><div class="d">${v===null?'Sin datos':(BW[B.k]*v/100).toFixed(1)+' de '+BW[B.k]+' pts en el PEC final'}</div><div class="mini"><i style="width:${v??0}%"></i></div></div>`;}).join('');
+    return `<div class="pec" role="button" tabindex="0" data-k="${B.k}" title="Ver por qué no llega al 100%" style="--c:${BCOL[B.k]}"><div class="n">${B.n}</div><div class="p">${v===null?'–':v.toFixed(1)+'%'}</div><div class="d">${v===null?'Sin datos':(BW[B.k]*v/100).toFixed(1)+' de '+BW[B.k]+' pts en el PEC final'}</div><div class="mini"><i style="width:${v??0}%"></i></div><div class="why">${v!==null&&v<99.95?'¿Por qué no llega al 100%? ▸':'Ver detalle ▸'}</div></div>`;}).join('');
   const encu=itemStats(rs).find(i=>i.k==='encuesta')||{fail:null}; // metas: infografía «KPIs del Contact Center»
   document.getElementById('kpis').innerHTML=[
     [A.copc===null?'–':A.copc.toFixed(1)+'%','Nota COPC (crítico = 0)'],
@@ -755,6 +768,50 @@ function ocSup(sup,y){
 document.getElementById('ocBack').onclick=()=>ocOpen(ocMot.motivo,ocMot.x);
 document.getElementById('ocX').onclick=()=>ocDlg.close();
 ocDlg.addEventListener('click',e=>{if(e.target===ocDlg)ocDlg.close();});
+// ---- modal: por qué un PEC no llega al 100% (clic en las tarjetas PEC del resumen)
+const pecDlg=document.getElementById('pecDlg');
+const escP=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function pecOpen(k){
+  const B=BL.find(b=>b.k===k), its=ITEMS.filter(i=>i.b===k), rs=rows();
+  const ap=rs.filter(r=>r.b100[k]!==null&&r.b100[k]!==undefined), A=mean(ap.map(r=>r.b100[k]));
+  const vale=(r,i)=>r.it[i.k]!==null&&r.it[i.k]!==undefined;
+  // La brecha al 100% se reparte exacto entre ítems: en cada evaluación, peso del ítem incumplido ÷ peso de los ítems que aplican
+  const st=its.map(i=>{let si=0,no=0,gap=0;const ases={};
+    ap.forEach(r=>{if(!vale(r,i))return;const W=its.reduce((a,j)=>a+(vale(r,j)?j.w:0),0);
+      if(r.it[i.k]===1)si++;else{no++;gap+=i.w*(1-r.it[i.k])/W;ases[r.asesorN]=(ases[r.asesorN]||0)+1;}});
+    return {...i,si,no,cump:si+no?si/(si+no)*100:null,gap:ap.length?gap/ap.length*100:0,ases:Object.entries(ases).sort((a,b)=>b[1]-a[1])};});
+  const conFalla=ap.filter(r=>its.some(i=>r.it[i.k]===0)).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const falta=A===null?null:100-A, top=st.filter(x=>x.gap>0.05).sort((a,b)=>b.gap-a.gap);
+  document.getElementById('pecDlgT').textContent=`${B.n} · ${A===null?'–':A.toFixed(1)+'%'}`;
+  document.getElementById('pecDlgS').innerHTML=A===null?'No hay evaluaciones donde aplique este bloque con los filtros actuales.'
+    :falta<0.05?`Con los filtros actuales ${B.n} está al 100%: ningún ítem quedó en NO CUMPLE.`
+    :`Le faltan <b>${falta.toFixed(1)} puntos porcentuales</b> para el 100% (${(BW[k]*falta/100).toFixed(1)} de ${BW[k]} pts del PEC final). `+
+     `<b>${conFalla.length} de ${ap.length}</b> evaluaciones tienen al menos un ítem de este PEC en NO CUMPLE.`+
+     (top.length?` La mayor parte viene de <b>${top[0].n}</b> (${top[0].gap.toFixed(1)} pp)`+(top[1]?` y <b>${top[1].n}</b> (${top[1].gap.toFixed(1)} pp)`:'')+'.':'')+
+     ` La columna «Resta» reparte la brecha entre los ítems y suma los ${falta.toFixed(1)} pp. Calculado con los filtros actuales.`;
+  const t=document.getElementById('tPecIt');t._sort=undefined;
+  table('tPecIt',[
+    {h:'Ítem',v:d=>d.n,f:d=>escP(d.n)+(d.c?' <span class="small">(crítico)</span>':''),cls:'l'},
+    {h:'Peso<br>(pts)',v:d=>d.w,f:d=>String(d.w)},
+    {h:'Aplica',v:d=>d.si+d.no,f:d=>String(d.si+d.no)},
+    {h:'No<br>cumple',v:d=>d.no,f:d=>String(d.no)},
+    {h:'%<br>cumple',v:d=>d.cump,f:d=>heat(d.cump)},
+    {h:'Resta<br>(pp)',v:d=>d.gap,f:d=>d.gap>0.005?`<b>${d.gap.toFixed(1)}</b>`:'0.0'},
+    {h:'Asesores con más incumplimientos',v:d=>d.no,f:d=>d.ases.slice(0,4).map(([a,n])=>`${escP(a)} (${n})`).join(' · ')||'<span class="na">–</span>',cls:'wrap',nosort:true}],
+    st,{sort:5,dir:-1});
+  const e=document.getElementById('tPecEj');e._sort=undefined;
+  table('tPecEj',[
+    {h:'Fecha',v:d=>d.fecha,f:d=>fmtDay(d.fecha),cls:'l'},
+    {h:'Asesor',v:d=>d.asesorN,cls:'l'},
+    {h:'Ítems en NO CUMPLE',v:d=>d.fecha,f:d=>its.filter(i=>d.it[i.k]===0).map(i=>escP(i.n)).join('<br>'),cls:'wrap',nosort:true},
+    {h:'Novedad del analista',v:d=>d.fecha,f:d=>escP(String(d.novedad||'').slice(0,320))+(String(d.novedad||'').length>320?'…':''),cls:'wrap',nosort:true}],
+    conFalla.slice(0,8),{sort:0,dir:-1});
+  if(!pecDlg.open)pecDlg.showModal();
+}
+document.getElementById('pecs').addEventListener('click',e=>{const c=e.target.closest('.pec[data-k]');if(c)pecOpen(c.dataset.k);});
+document.getElementById('pecs').addEventListener('keydown',e=>{const c=e.target.closest('.pec[data-k]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();pecOpen(c.dataset.k);}});
+document.getElementById('pecX').onclick=()=>pecDlg.close();
+pecDlg.addEventListener('click',e=>{if(e.target===pecDlg)pecDlg.close();});
 const aseDlg=document.getElementById('aseDlg');
 document.getElementById('openAse').onclick=e=>{e.preventDefault();aseDlg.showModal();};
 document.getElementById('aseX').onclick=()=>aseDlg.close();
