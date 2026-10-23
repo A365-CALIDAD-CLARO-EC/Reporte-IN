@@ -108,10 +108,10 @@ footer h3{color:var(--ink);font-size:16px;margin:0 0 6px}
 footer ul{margin:0;padding-left:18px;max-width:90ch}
 #ocDlg{width:min(860px,calc(100vw - 32px));max-height:min(80vh,720px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
 #ocDlg::backdrop{background:rgba(10,15,22,.55)}
-#aseDlg,#detDlg{width:min(1240px,calc(100vw - 32px));max-height:min(90vh,980px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
-#aseDlg::backdrop,#detDlg::backdrop{background:rgba(10,15,22,.55)}
+#aseDlg,#detDlg,#cuarDlg{width:min(1240px,calc(100vw - 32px));max-height:min(90vh,980px);border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);color:var(--ink)}
+#aseDlg::backdrop,#detDlg::backdrop,#cuarDlg::backdrop{background:rgba(10,15,22,.55)}
 #detDlg .tw{max-height:calc(90vh - 190px);overflow:auto}
-#aseDlg .tw{max-height:calc(90vh - 200px);overflow:auto}
+#aseDlg .tw,#cuarDlg .tw{max-height:calc(90vh - 200px);overflow:auto}
 .dlg-h{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px}
 .dlg-h>div{flex:1;min-width:0}
 .dlg-h h3{margin:0;font-size:18px}
@@ -119,6 +119,7 @@ footer ul{margin:0;padding-left:18px;max-width:90ch}
 .dlg-x,.dlg-back{font:inherit;background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--ink);cursor:pointer}
 .dlg-x{font-size:20px;line-height:1;width:32px;height:32px}
 .dlg-back{font-size:13px;padding:6px 10px;white-space:nowrap}
+.dlg-act{font:inherit;font-size:13px;padding:6px 12px;border-radius:6px;border:1px solid var(--cx-red);background:var(--cx-red);color:#fff;font-weight:700;cursor:pointer;white-space:nowrap}
 .qtag{display:inline-block;min-width:30px;padding:2px 8px;border-radius:999px;color:#fff;font-weight:700;font-size:12px;text-align:center}
 .seg-toggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:12px}
 .seg-toggle button{font:inherit;font-size:13px;padding:6px 12px;border:0;background:transparent;color:var(--muted);cursor:pointer}
@@ -279,7 +280,7 @@ footer h3{margin-bottom:8px!important}
 
 <section id="cuar">
   <h2>Cuartiles</h2>
-  <p class="lede">Cuartiles simétricos por PEC final, igual que en Entel: los asesores se ordenan de mayor a menor PEC final y se reparten en cuatro grupos del mismo tamaño. Q1 = mejor 25%, Q4 = peor 25%. Se recalculan con los filtros (menos Asesor y Cuartil). Haz clic en una fila para filtrar todo el reporte.</p>
+  <p class="lede">Cuartiles simétricos por PEC final, igual que en Entel: los asesores se ordenan de mayor a menor PEC final y se reparten en cuatro grupos del mismo tamaño. Q1 = mejor 25%, Q4 = peor 25%. Se recalculan con los filtros (menos Asesor y Cuartil). Haz clic en un cuartil o en un supervisor para ver la lista de asesores y armar el PDA.</p>
   <div class="grid2e">
     <div class="panel"><h3 style="margin:0 0 8px;font-size:16px">Resumen por cuartil</h3><div class="tw"><table id="tCuar"></table></div></div>
     <div class="panel"><h3 style="margin:0 0 8px;font-size:16px">Asesores por cuartil y supervisor</h3><div class="tw"><table id="tCuarSup"></table></div></div>
@@ -347,6 +348,16 @@ footer h3{margin-bottom:8px!important}
   </div>
 </section>
 
+<dialog id="cuarDlg" aria-labelledby="cuarDlgT">
+  <div class="dlg-h">
+    <div><p class="dlg-k" id="cuarDlgK">Cuartiles</p><h3 id="cuarDlgT"></h3></div>
+    <button class="dlg-act" id="cuarCopy" type="button">Copiar para PDA</button>
+    <button class="dlg-x" id="cuarX" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <p class="small" id="cuarDlgS" style="margin:0 0 10px"></p>
+  <div class="tw"><table id="tCuarDlg"></table></div>
+</dialog>
+
 <dialog id="ocDlg" aria-labelledby="ocDlgT">
   <div class="dlg-h">
     <button class="dlg-back" id="ocBack" type="button" hidden>← Supervisores</button>
@@ -378,7 +389,7 @@ footer h3{margin-bottom:8px!important}
     <li>Nota COPC: igual al PEC final, pero vale 0 si falla un ítem crítico (información/solución, cierre correcto, deriva correctamente, valida identidad).</li>
     <li>La columna PECNEG del archivo original estaba fija en 21. Aquí se recalculó desde las respuestas. Una fecha registrada como 22/09/2025 se tomó como 22/09/2026.</li>
     <li>El supervisor se asignó según el correo grupal que predomina en cada asesor.</li>
-    <li>Cuartiles (como en Entel): se promedia el PEC final de cada asesor con los filtros aplicados, se ordenan de mayor a menor y se reparten en cuatro grupos simétricos por posición. Q1 = mejor 25%, Q4 = peor 25%.</li>
+    <li>Cuartiles (como en Entel; al hacer clic se listan los asesores para el PDA): se promedia el PEC final de cada asesor con los filtros aplicados, se ordenan de mayor a menor y se reparten en cuatro grupos simétricos por posición. Q1 = mejor 25%, Q4 = peor 25%.</li>
   </ul>
 </div></footer>
 <div class="cx-foot" role="contentinfo"><div class="cx-fin"><span class="cx-seg"><i></i><i></i><i></i></span><span><b>Claro</b> · Calidad Inbound · Elaborado por <b>A365</b></span><span class="cx-r">Documento de uso interno · Confidencial</span></div></div>
@@ -640,14 +651,41 @@ function renderCuartiles(){
   table('tCuar',[{h:'Cuartil',v:d=>d.q,f:d=>`${qtag(d.q)} <span class="small">${CUAR_L[d.q]}</span>`,cls:'l'},{h:'Asesores',v:d=>d.ases},{h:'Eval.',v:d=>d.a.n},
     {h:'Rango PEC<br>del asesor',v:d=>d.max,f:d=>d.min===null?'<span class="na">–</span>':`${d.min.toFixed(1)} – ${d.max.toFixed(1)}%`},
     {h:'PEC final',v:d=>d.a.fin,f:d=>heat(d.a.fin)},{h:'Nota COPC',v:d=>d.a.copc,f:d=>heat(d.a.copc)},{h:'% error<br>crítico',v:d=>d.a.crit,f:d=>heat(d.a.crit,true)}],
-    qs,{sort:0,dir:1,onRow:d=>setF('cuar',F.cuar===d.q?'':d.q)});
+    qs,{sort:0,dir:1,onRow:d=>cuarOpen(`${d.q} · ${CUAR_L[d.q]}`,base.filter(r=>CQ[r.asesorN]===d.q))});
   const sups=[...groupBy(base,'sup')].map(([s,x])=>{const as=[...new Set(x.map(r=>r.asesorN))],c={};['Q1','Q2','Q3','Q4'].forEach(q=>c[q]=as.filter(a=>CQ[a]===q).length);
     return {s,n:as.length,c,bajo:as.length?(c.Q3+c.Q4)/as.length*100:null,fin:agg(x).fin};});
   table('tCuarSup',[{h:'Supervisor',v:d=>d.s||'Sin supervisor',cls:'l'},{h:'Asesores',v:d=>d.n},
     ...['Q1','Q2','Q3','Q4'].map(q=>({h:qtag(q),v:d=>d.c[q],f:d=>d.c[q]?d.c[q]:'<span class="na">0</span>'})),
     {h:'% en<br>Q3 + Q4',v:d=>d.bajo,f:d=>pct(d.bajo,0)},{h:'PEC final',v:d=>d.fin,f:d=>heat(d.fin)}],
-    sups,{sort:6,onRow:d=>setF('sup',F.sup===d.s?'':d.s)});
+    sups,{sort:6,onRow:d=>cuarOpen('Asesores de '+(d.s||'Sin supervisor'),base.filter(r=>r.sup===d.s))});
 }
+// ventana: asesores de un cuartil o de un supervisor, con lo que más falla (insumo para el PDA)
+const cuarDlg=document.getElementById('cuarDlg');
+let cuarData=[];
+function cuarOpen(titulo,x){
+  cuarData=[...groupBy(x,'asesorN')].map(([n,y])=>{const st=itemStats(y).filter(i=>i.no>0).sort((a,b)=>b.no-a.no||b.w-a.w);
+    return {n,q:CQ[n],sup:y[0].sup,a:agg(y),oc:ocStats(y),fallas:st.slice(0,3)};});
+  const A=agg(x);
+  document.getElementById('cuarDlgT').textContent=titulo;
+  document.getElementById('cuarDlgS').textContent=`${cuarData.length} asesores · ${A.n} evaluaciones · PEC final ${A.fin===null?'–':A.fin.toFixed(1)+'%'}. «Copiar para PDA» copia la lista para pegarla en Excel.`;
+  const t=document.getElementById('tCuarDlg');t._sort=undefined;
+  table('tCuarDlg',[{h:'Asesor',v:d=>d.n,cls:'l'},{h:'Cuartil',v:d=>d.q||'',f:d=>qtag(d.q)},{h:'Supervisor',v:d=>d.sup,cls:'l'},{h:'Eval.',v:d=>d.a.n},
+    {h:'PEC final',v:d=>d.a.fin,f:d=>heat(d.a.fin)},{h:'Nota COPC',v:d=>d.a.copc,f:d=>heat(d.a.copc)},{h:'% error<br>crítico',v:d=>d.a.crit,f:d=>heat(d.a.crit,true)},
+    {h:'Ofrecim.<br>% cumpl.',v:d=>d.oc.cump,f:d=>heat(d.oc.cump)},
+    {h:'Ítems a reforzar (veces que falló)',v:d=>d.fallas.length?d.fallas[0].no:0,f:d=>d.fallas.length?d.fallas.map(i=>`${i.n} (${i.no})${i.c?'<span class="crit">crítico</span>':''}`).join('<br>'):'<span class="na">Sin fallas</span>',cls:'l wrap'}],
+    cuarData,{sort:4,dir:1,onRow:d=>{cuarDlg.close();setF('ase',d.n);}});
+  if(!cuarDlg.open)cuarDlg.showModal();
+}
+document.getElementById('cuarX').onclick=()=>cuarDlg.close();
+cuarDlg.addEventListener('click',e=>{if(e.target===cuarDlg)cuarDlg.close();});
+document.getElementById('cuarCopy').onclick=async e=>{
+  const f=v=>v===null||v===undefined?'':v.toFixed(1).replace('.',',');
+  const tsv=[['Asesor','Cuartil','Supervisor','Evaluaciones','PEC final %','Nota COPC %','% error crítico','Ofrecimiento % cumpl.','Ítems a reforzar'].join('\t'),
+    ...[...cuarData].sort((a,b)=>(a.a.fin??999)-(b.a.fin??999)).map(d=>[d.n,d.q||'',d.sup,d.a.n,f(d.a.fin),f(d.a.copc),f(d.a.crit),f(d.oc.cump),d.fallas.map(i=>`${i.n} (${i.no})`).join('; ')].join('\t'))].join('\n');
+  const b=e.currentTarget;
+  try{await navigator.clipboard.writeText(tsv);b.textContent='¡Copiado!';}catch(_){b.textContent='No se pudo copiar';}
+  setTimeout(()=>b.textContent='Copiar para PDA',1800);
+};
 
 // ---- ofrecimiento comercial (ítem «comercial»: 1 cumple, 0 no cumple, null no aplica)
 function ocStats(rs){const ap=rs.filter(r=>r.it.comercial===0||r.it.comercial===1),si=ap.filter(r=>r.it.comercial===1).length;
