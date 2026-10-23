@@ -806,12 +806,12 @@ function pecOpen(k){
   if(!pecDlg.open)pecDlg.showModal();
   pecDlg.querySelectorAll('details.mas').forEach(d=>d.open=false);
   const stO=st.slice().sort((a,b)=>b.gap-a.gap);
-  document.getElementById('pecChBox').style.height=(56+stO.length*34)+'px';
+  document.getElementById('pecChBox').style.height=(56+stO.length*28)+'px';
   // etiqueta de datos al final de cada barra: «6.1 pp · 34 no cumple»
   const etiquetas={id:'etqPec',afterDatasetsDraw(ch){const c=ch.ctx;c.save();c.font=`600 12px ${getComputedStyle(document.body).fontFamily}`;c.fillStyle=css('--ink');c.textBaseline='middle';
     ch.getDatasetMeta(0).data.forEach((b,j)=>{const x=stO[j];c.fillText(`${x.gap.toFixed(1)} pp · ${x.no} no cumple`,b.x+6,b.y);});c.restore();}};
   mk('chPec',{type:'bar',plugins:[etiquetas],data:{labels:stO.map(x=>x.n),datasets:[{label:'Resta (pp)',data:stO.map(x=>+x.gap.toFixed(2)),
-      backgroundColor:stO.map(x=>x.gap>0.05?css('--red'):css('--line')),borderRadius:4,maxBarThickness:24}]},
+      backgroundColor:stO.map(x=>x.gap>0.05?css('--chart2'):css('--line')),borderRadius:3,maxBarThickness:12}]},
     options:{...baseOpts(),indexAxis:'y',layout:{padding:{right:130}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const x=stO[c.dataIndex];return `Resta ${x.gap.toFixed(1)} pp · ${x.no} de ${x.si+x.no} no cumple`;}}}},
       scales:{x:{beginAtZero:true,title:{display:true,text:'Puntos porcentuales que resta al 100%'}},y:{ticks:{callback:function(v){const l=this.getLabelForValue(v);return l.length>42?l.slice(0,41)+'…':l;}}}},
 }});
