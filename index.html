@@ -390,7 +390,15 @@ footer h3{margin-bottom:8px!important}
   <p class="small" style="margin:4px 0 10px">Haz clic en una barra para ver quiénes incumplen ese ítem.</p>
   <div id="pecAse" hidden>
     <h4 id="pecAseT" style="margin:12px 0 2px;font-size:14px"></h4>
-    <div class="callout" id="pecAseS" style="margin:6px 0 0"></div>
+    <p class="small" id="pecAseS" style="margin:4px 0 8px"></p>
+    <div id="pecAseG">
+      <div class="chartbox" id="pecAseBox" style="height:200px"><canvas id="chPecAse"></canvas></div>
+      <div class="grid2e" style="margin-top:12px">
+        <div><h4 style="margin:0 0 4px;font-size:13px">Por supervisor (casos)</h4><div class="chartbox" id="pecSupBox" style="height:140px"><canvas id="chPecSup"></canvas></div></div>
+        <div><h4 style="margin:0 0 4px;font-size:13px">Por antigüedad (casos)</h4><div class="chartbox" id="pecAntBox" style="height:140px"><canvas id="chPecAnt"></canvas></div></div>
+      </div>
+      <p class="small" id="pecAseF" style="margin:10px 0 0"></p>
+    </div>
     <details class="mas" id="pecAseMas"><summary>Más detalles <span class="sub">· tabla de los <span id="pecAseN">0</span> asesores que incumplen</span></summary>
       <div class="in"><div class="tw"><table id="tPecAse"></table></div></div></details>
   </div>
@@ -853,32 +861,34 @@ function pecAse(i){
   const todos=Object.values(g);
   const data=todos.filter(x=>x.no).map(x=>({...x,cump:(x.ap-x.no)/x.ap*100})).sort((a,b)=>b.no-a.no||a.cump-b.cump);
   const total=data.reduce((t,x)=>t+x.no,0), B=b=>`<b>${escP(b)}</b>`, pct0=v=>Math.round(v)+'%';
-  const quien=x=>`${B(x.a)} (${x.no} de ${x.ap})`;
   const lista=xs=>xs.length>1?xs.slice(0,-1).join(', ')+' y '+xs[xs.length-1]:xs.join('');
   document.getElementById('pecAseT').textContent=`${i.n}: asesores que incumplen`;
-  const P=[];
-  if(!data.length){P.push(`Nadie incumple «${escP(i.n)}» con los filtros actuales (${todos.length} asesores evaluados).`);}
+  document.getElementById('pecAseG').hidden=!data.length;
+  if(!data.length){document.getElementById('pecAseS').innerHTML=`Nadie incumple «${escP(i.n)}» con los filtros actuales (${todos.length} asesores evaluados).`;}
   else{
-    P.push(`<b>${data.length} de ${todos.length}</b> asesores evaluados explican los <b>${total}</b> incumplimientos de «${escP(i.n)}».`);
     let acc=0,k=0;while(k<data.length&&acc<total*0.5){acc+=data[k].no;k++;}
-    if(k<data.length)P.push(`Solo <b>${k}</b> ${k===1?'asesor concentra':'asesores concentran'} el <b>${pct0(acc/total*100)}</b> de los casos: ${lista(data.slice(0,k).map(quien))}.`);
-    const t=data[0];
-    P.push(`El caso más crítico es ${B(t.a)}: incumple en <b>${t.no} de ${t.ap}</b> evaluaciones (${pct0(t.cump)} de cumplimiento)`+
-      (t.ant?`, con <b>${t.ant.toLowerCase()}</b> de antigüedad`:'')+(t.sup?`, en el equipo de ${B(t.sup)}`:'')+'.');
-    const porSup={};data.forEach(x=>{if(x.sup)porSup[x.sup]=(porSup[x.sup]||0)+x.no;});
-    const sups=Object.entries(porSup).sort((a,b)=>b[1]-a[1]);
-    if(sups.length>1)P.push(`Por equipo, ${B(sups[0][0])} reúne <b>${sups[0][1]} de ${total}</b> casos (${pct0(sups[0][1]/total*100)})`+
-      (sups[1]?`, seguido de ${B(sups[1][0])} con ${sups[1][1]}`:'')+'.');
-    else if(sups.length===1)P.push(`Todos los casos son del equipo de ${B(sups[0][0])}.`);
-    const porAnt={};data.forEach(x=>{const a=x.ant||'sin dato';(porAnt[a]=porAnt[a]||{n:0,c:0});porAnt[a].n++;porAnt[a].c+=x.no;});
-    const ants=Object.entries(porAnt).sort((a,b)=>b[1].c-a[1].c);
-    if(ants.length>1)P.push(`Por antigüedad, los asesores con <b>${ants[0][0].toLowerCase()}</b> suman <b>${ants[0][1].c}</b> de los casos (${ants[0][1].n} asesores)`+
-      `; los de ${ants[1][0].toLowerCase()}, ${ants[1][1].c}.`);
-    else if(ants.length===1)P.push(`Todos los que incumplen tienen <b>${ants[0][0].toLowerCase()}</b> de antigüedad.`);
+    document.getElementById('pecAseS').innerHTML=`<b>${data.length} de ${todos.length}</b> asesores evaluados explican los <b>${total}</b> incumplimientos.`+
+      (k<data.length?` En rojo, los <b>${k}</b> que concentran el <b>${pct0(acc/total*100)}</b> de los casos.`:'')+' Solo se listan los asesores con al menos un NO CUMPLE.';
+    // gráfico de barras horizontal con etiqueta al final de cada barra
+    const barras=(id,boxId,items,lab,col,txt)=>{
+      document.getElementById(boxId).style.height=(40+items.length*26)+'px';
+      const etq={id:'etq'+id,afterDatasetsDraw(ch){const c=ch.ctx;c.save();c.font=`600 12px ${getComputedStyle(document.body).fontFamily}`;c.fillStyle=css('--ink');c.textBaseline='middle';
+        ch.getDatasetMeta(0).data.forEach((b,j)=>c.fillText(txt(items[j]),b.x+6,b.y));c.restore();}};
+      mk(id,{type:'bar',plugins:[etq],data:{labels:items.map(lab),datasets:[{label:'No cumple',data:items.map(x=>x.no),backgroundColor:items.map(col),borderRadius:4,maxBarThickness:20}]},
+        options:{...baseOpts(),indexAxis:'y',layout:{padding:{right:170}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>txt(items[c.dataIndex])}}},
+          scales:{x:{beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Casos de NO CUMPLE'}},y:{ticks:{autoSkip:false,font:{size:11}}}}}});};
+    const mas=data.slice(0,20);
+    barras('chPecAse','pecAseBox',mas,x=>x.a,(x,j)=>j<k?css('--red'):css('--chart2'),x=>`${x.no} de ${x.ap} · ${pct0(x.cump)} cumple${x.sup?' · '+x.sup:''}`);
+    const grupo=key=>{const m={};data.forEach(x=>{const g=key(x);(m[g]=m[g]||{g,no:0,n:0});m[g].no+=x.no;m[g].n++;});return Object.values(m);};
+    const sups=grupo(x=>x.sup||'Sin supervisor').sort((a,b)=>b.no-a.no);
+    barras('chPecSup','pecSupBox',sups,x=>x.g,(x,j)=>j?css('--chart2'):css('--red'),x=>`${x.no} (${pct0(x.no/total*100)}) · ${x.n} ases.`);
+    const ants=grupo(x=>x.ant||'Sin dato').sort((a,b)=>ANT_ORD(a.g)-ANT_ORD(b.g));
+    const antMax=Math.max(...ants.map(x=>x.no));
+    barras('chPecAnt','pecAntBox',ants,x=>x.g,x=>x.no===antMax?css('--red'):css('--chart2'),x=>`${x.no} (${pct0(x.no/total*100)}) · ${x.n} ases.`);
     const foco=data.slice(0,Math.min(3,k||1)).map(x=>B(x.a));
-    P.push(`<b>Por dónde empezar:</b> retroalimentación individual a ${lista(foco)}`+(sups.length?` y seguimiento del ítem en el equipo de ${B(sups[0][0])}`:'')+'.');
+    document.getElementById('pecAseF').innerHTML=`<b>Por dónde empezar:</b> retroalimentación individual a ${lista(foco)} y seguimiento del ítem en el equipo de ${B(sups[0].g)}.`+
+      (data.length>mas.length?` El gráfico muestra los ${mas.length} con más casos; la tabla de abajo tiene a los ${data.length}.`:'');
   }
-  document.getElementById('pecAseS').innerHTML=P.map(x=>`<p>${x}</p>`).join('')+'<p class="small" style="margin-top:6px">Solo se listan los asesores con al menos un NO CUMPLE en este ítem.</p>';
   document.getElementById('pecAseN').textContent=data.length;document.getElementById('pecAseMas').open=false;
   const tb=document.getElementById('tPecAse');tb._sort=undefined;
   table('tPecAse',[{h:'Asesor',v:d=>d.a,cls:'l'},{h:'Supervisor',v:d=>d.sup,cls:'l'},
