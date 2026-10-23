@@ -377,7 +377,14 @@ footer h3{margin-bottom:8px!important}
     <button class="dlg-x" id="pecX" type="button" aria-label="Cerrar">×</button>
   </div>
   <p class="small" id="pecDlgS" style="margin:0 0 12px"></p>
+  <div class="chartbox" id="pecChBox" style="height:200px"><canvas id="chPec"></canvas></div>
+  <p class="small" style="margin:4px 0 10px">Haz clic en una barra o en una fila de la tabla para ver el detalle por asesor de ese ítem.</p>
   <div class="tw"><table id="tPecIt"></table></div>
+  <div id="pecAse" hidden>
+    <h4 id="pecAseT" style="margin:16px 0 2px;font-size:14px"></h4>
+    <p class="small" id="pecAseS" style="margin:0 0 6px"></p>
+    <div class="tw"><table id="tPecAse"></table></div>
+  </div>
   <h4 style="margin:16px 0 6px;font-size:14px">Ejemplos recientes con incumplimientos</h4>
   <div class="tw"><table id="tPecEj"></table></div>
 </dialog>
@@ -789,6 +796,16 @@ function pecOpen(k){
      `<b>${conFalla.length} de ${ap.length}</b> evaluaciones tienen al menos un ítem de este PEC en NO CUMPLE.`+
      (top.length?` La mayor parte viene de <b>${top[0].n}</b> (${top[0].gap.toFixed(1)} pp)`+(top[1]?` y <b>${top[1].n}</b> (${top[1].gap.toFixed(1)} pp)`:'')+'.':'')+
      ` La columna «Resta» reparte la brecha entre los ítems y suma los ${falta.toFixed(1)} pp. Calculado con los filtros actuales.`;
+  if(!pecDlg.open)pecDlg.showModal();
+  document.getElementById('pecAse').hidden=true;
+  const stO=st.slice().sort((a,b)=>b.gap-a.gap);
+  document.getElementById('pecChBox').style.height=(56+stO.length*34)+'px';
+  mk('chPec',{type:'bar',data:{labels:stO.map(x=>x.n),datasets:[{label:'Resta (pp)',data:stO.map(x=>+x.gap.toFixed(2)),
+      backgroundColor:stO.map(x=>x.gap>0.05?css('--red'):css('--line')),borderRadius:4,maxBarThickness:24}]},
+    options:{...baseOpts(),indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const x=stO[c.dataIndex];return `Resta ${x.gap.toFixed(1)} pp · ${x.no} de ${x.si+x.no} no cumple`;}}}},
+      scales:{x:{beginAtZero:true,title:{display:true,text:'Puntos porcentuales que resta al 100%'}},y:{ticks:{callback:function(v){const l=this.getLabelForValue(v);return l.length>42?l.slice(0,41)+'…':l;}}}},
+      onClick:(e,els)=>{if(els.length)pecAse(stO[els[0].index]);},
+      onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';}}});
   const t=document.getElementById('tPecIt');t._sort=undefined;
   table('tPecIt',[
     {h:'Ítem',v:d=>d.n,f:d=>escP(d.n)+(d.c?' <span class="small">(crítico)</span>':''),cls:'l'},
@@ -798,7 +815,7 @@ function pecOpen(k){
     {h:'%<br>cumple',v:d=>d.cump,f:d=>heat(d.cump)},
     {h:'Resta<br>(pp)',v:d=>d.gap,f:d=>d.gap>0.005?`<b>${d.gap.toFixed(1)}</b>`:'0.0'},
     {h:'Asesores con más incumplimientos',v:d=>d.no,f:d=>d.ases.slice(0,4).map(([a,n])=>`${escP(a)} (${n})`).join(' · ')||'<span class="na">–</span>',cls:'wrap',nosort:true}],
-    st,{sort:5,dir:-1});
+    st,{sort:5,dir:-1,onRow:d=>pecAse(d)});
   const e=document.getElementById('tPecEj');e._sort=undefined;
   table('tPecEj',[
     {h:'Fecha',v:d=>d.fecha,f:d=>fmtDay(d.fecha),cls:'l'},
@@ -806,7 +823,19 @@ function pecOpen(k){
     {h:'Ítems en NO CUMPLE',v:d=>d.fecha,f:d=>its.filter(i=>d.it[i.k]===0).map(i=>escP(i.n)).join('<br>'),cls:'wrap',nosort:true},
     {h:'Novedad del analista',v:d=>d.fecha,f:d=>escP(String(d.novedad||'').slice(0,320))+(String(d.novedad||'').length>320?'…':''),cls:'wrap',nosort:true}],
     conFalla.slice(0,8),{sort:0,dir:-1});
-  if(!pecDlg.open)pecDlg.showModal();
+}
+// detalle por asesor de un ítem (clic en la barra o en la fila)
+function pecAse(i){
+  const g={};rows().forEach(r=>{const v=r.it[i.k];if(v===null||v===undefined)return;
+    const x=g[r.asesorN]||(g[r.asesorN]={a:r.asesorN,sup:r.sup,ap:0,no:0});x.ap++;if(v===0)x.no++;});
+  const data=Object.values(g).map(x=>({...x,cump:x.ap?(x.ap-x.no)/x.ap*100:null}));
+  const conNo=data.filter(x=>x.no).length;
+  document.getElementById('pecAseT').textContent=`${i.n}: detalle por asesor`;
+  document.getElementById('pecAseS').textContent=`${conNo} de ${data.length} asesores evaluados tienen al menos un NO CUMPLE en este ítem (${i.no} casos en total). Ordenado por incumplimientos; clic en un encabezado para reordenar.`;
+  const t=document.getElementById('tPecAse');t._sort=undefined;
+  table('tPecAse',[{h:'Asesor',v:d=>d.a,cls:'l'},{h:'Supervisor',v:d=>d.sup,cls:'l'},{h:'Evaluaciones<br>donde aplica',v:d=>d.ap},
+    {h:'No<br>cumple',v:d=>d.no,f:d=>d.no?`<b>${d.no}</b>`:'0'},{h:'%<br>cumple',v:d=>d.cump,f:d=>heat(d.cump)}],data,{sort:3,dir:-1});
+  const box=document.getElementById('pecAse');box.hidden=false;box.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 document.getElementById('pecs').addEventListener('click',e=>{const c=e.target.closest('.pec[data-k]');if(c)pecOpen(c.dataset.k);});
 document.getElementById('pecs').addEventListener('keydown',e=>{const c=e.target.closest('.pec[data-k]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();pecOpen(c.dataset.k);}});
